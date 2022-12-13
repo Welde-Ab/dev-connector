@@ -7,11 +7,11 @@ const keys = require('../../config/keys');
 const passport = require('passport');
 
 // Load Input Validation
-//const validateRegisterInput = require('../../validation/register');
-//const validateLoginInput = require('../../validation/login');
+const validateRegisterInput  = require('../../validation/register');
+const validateLoginInput = require('../../validation/login');
 
 // Load User model
-//const User = require('../../models/User');
+const User = require('../../models/User');
 
 // @route   GET api/users/test
 // @desc    Tests users route
@@ -22,7 +22,7 @@ router.get('/test', (req, res) => res.json({ msg: 'Users Works' }));
 // @desc    Register user
 // @access  Public
 router.post('/register', (req, res) => {
-  const { errors, isValid } = validateRegisterInput(req.body);
+  const { errors, isValid } = validateRegisterInput(req.body); //Destructuring
 
   // Check Validation
   if (!isValid) {
@@ -32,7 +32,8 @@ router.post('/register', (req, res) => {
   User.findOne({ email: req.body.email }).then(user => {
     if (user) {
       errors.email = 'Email already exists';
-      return res.status(400).json(errors);
+      // return res.status(400).json(errors);
+      return res.status(400).json({email: 'Email already exists!'});
     } else {
       const avatar = gravatar.url(req.body.email, {
         s: '200', // Size
@@ -103,7 +104,7 @@ router.post('/login', (req, res) => {
         );
       } else {
         errors.password = 'Password incorrect';
-        return res.status(400).json(errors);
+        return res.status(404).json(errors);
       }
     });
   });
@@ -122,6 +123,21 @@ router.get(
       email: req.user.email
     });
   }
+);
+
+// @route   POST api/users/current
+// @desc    Return current user
+// @access  Private
+router.get(
+    '/current',
+    passport.authenticate('jwt', { session: false }),
+    (req, res) => {
+      res.json({
+        id: req.user.id,
+        name: req.user.name,
+        email: req.user.email
+      });
+    }
 );
 
 module.exports = router;

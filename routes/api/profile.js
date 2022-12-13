@@ -4,14 +4,14 @@ const mongoose = require('mongoose');
 const passport = require('passport');
 
 // Load Validation
-//const validateProfileInput = require('../../validation/profile');
-//const validateExperienceInput = require('../../validation/experience');
-//const validateEducationInput = require('../../validation/education');
+const validateProfileInput = require('../../validation/profile');
+const validateExperienceInput = require('../../validation/experience');
+const validateEducationInput = require('../../validation/education');
 
 // Load Profile Model
-//const Profile = require('../../models/Profile');
+const Profile = require('../../models/Profile');
 // Load User Model
-//const User = require('../../models/User');
+const User = require('../../models/User');
 
 // @route   GET api/profile/test
 // @desc    Tests profile route
@@ -110,7 +110,7 @@ router.post(
   (req, res) => {
     const { errors, isValid } = validateProfileInput(req.body);
 
-    // Check Validation
+    // Check Validation step (procedure defined in /validator/profile)
     if (!isValid) {
       // Return any errors with 400 status
       return res.status(400).json(errors);
@@ -118,7 +118,7 @@ router.post(
 
     // Get fields
     const profileFields = {};
-    profileFields.user = req.user.id;
+    profileFields.user = req.user.id;//Get the user for which the profile is going to be field
     if (req.body.handle) profileFields.handle = req.body.handle;
     if (req.body.company) profileFields.company = req.body.company;
     if (req.body.website) profileFields.website = req.body.website;
@@ -127,41 +127,42 @@ router.post(
     if (req.body.status) profileFields.status = req.body.status;
     if (req.body.githubusername)
       profileFields.githubusername = req.body.githubusername;
-    // Skills - Spilt into array
+    // Skills - Spilt into array (Because it comes as csv)
     if (typeof req.body.skills !== 'undefined') {
       profileFields.skills = req.body.skills.split(',');
     }
 
     // Social
-    profileFields.social = {};
+    profileFields.social = {}; // Create it because it is an object of fields
     if (req.body.youtube) profileFields.social.youtube = req.body.youtube;
     if (req.body.twitter) profileFields.social.twitter = req.body.twitter;
     if (req.body.facebook) profileFields.social.facebook = req.body.facebook;
     if (req.body.linkedin) profileFields.social.linkedin = req.body.linkedin;
     if (req.body.instagram) profileFields.social.instagram = req.body.instagram;
 
-    Profile.findOne({ user: req.user.id }).then(profile => {
-      if (profile) {
-        // Update
-        Profile.findOneAndUpdate(
-          { user: req.user.id },
-          { $set: profileFields },
-          { new: true }
-        ).then(profile => res.json(profile));
-      } else {
-        // Create
-
-        // Check if handle exists
-        Profile.findOne({ handle: profileFields.handle }).then(profile => {
+    Profile.findOne({ user: req.user.id })
+        .then(profile => {
           if (profile) {
-            errors.handle = 'That handle already exists';
-            res.status(400).json(errors);
-          }
+            // Update
+            Profile.findOneAndUpdate(
+              { user: req.user.id },
+              { $set: profileFields },
+              { new: true }
+            ).then(profile => res.json(profile));
+          } else {
+            // Create
 
-          // Save Profile
-          new Profile(profileFields).save().then(profile => res.json(profile));
-        });
-      }
+            // Check if handle exists
+            Profile.findOne({ handle: profileFields.handle }).then(profile => {
+              if (profile) {
+                errors.handle = 'That handle already exists';
+                res.status(400).json(errors);
+              }
+
+              // Save Profile
+              new Profile(profileFields).save().then(profile => res.json(profile));
+            });
+          }
     });
   }
 );
@@ -181,21 +182,22 @@ router.post(
       return res.status(400).json(errors);
     }
 
-    Profile.findOne({ user: req.user.id }).then(profile => {
-      const newExp = {
-        title: req.body.title,
-        company: req.body.company,
-        location: req.body.location,
-        from: req.body.from,
-        to: req.body.to,
-        current: req.body.current,
-        description: req.body.description
-      };
+    Profile.findOne({ user: req.user.id })
+        .then(profile => {
+            const newExp = {
+                title: req.body.title,
+                company: req.body.company,
+                location: req.body.location,
+                from: req.body.from,
+                to: req.body.to,
+                current: req.body.current,
+                description: req.body.description
+            };
 
-      // Add to exp array
-      profile.experience.unshift(newExp);
+            // Add to experience array
+            profile.experience.unshift(newExp);
 
-      profile.save().then(profile => res.json(profile));
+            profile.save().then(profile => res.json(profile));
     });
   }
 );
@@ -289,12 +291,13 @@ router.delete(
   '/',
   passport.authenticate('jwt', { session: false }),
   (req, res) => {
-    Profile.findOneAndRemove({ user: req.user.id }).then(() => {
-      User.findOneAndRemove({ _id: req.user.id }).then(() =>
-        res.json({ success: true })
-      );
-    });
-  }
+    Profile.findOneAndRemove({ user: req.user.id })
+        .then(() => {
+          User.findOneAndRemove({ _id: req.user.id }).then(() =>
+            res.json({ success: true })
+          );
+        });
+    }
 );
 
 module.exports = router;

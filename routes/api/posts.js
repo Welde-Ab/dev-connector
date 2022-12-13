@@ -4,12 +4,12 @@ const mongoose = require('mongoose');
 const passport = require('passport');
 
 // Post model
-//const Post = require('../../models/Post');
+const Post = require('../../models/Post');
 // Profile model
-//const Profile = require('../../models/Profile');
+const Profile = require('../../models/Profile');
 
 // Validation
-//const validatePostInput = require('../../validation/post');
+const validatePostInput = require('../../validation/post');
 
 // @route   GET api/posts/test
 // @desc    Tests post route
@@ -127,7 +127,7 @@ router.post(
     Profile.findOne({ user: req.user.id }).then(profile => {
       Post.findById(req.params.id)
         .then(post => {
-          if (
+          if (// Check if user has liked the post
             post.likes.filter(like => like.user.toString() === req.user.id)
               .length === 0
           ) {

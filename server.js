@@ -1,29 +1,39 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+const gravatar = require('gravatar');
+const passport = require('passport');
 
+// Define Routes
 const users = require('./routes/api/users');
-const posts = require('./routes/api/posts');
 const profile = require('./routes/api/profile');
+const posts =  require('./routes/api/posts');
 
 const app = express();
+// body parser
+app.use(bodyParser.urlencoded({extended: false}));
+app.use(bodyParser.json());
 
-// DB Config
+//DB Config
 const db = require('./config/keys').mongoURI;
-
-//  Connect to MongoDB
+// connect to Mongo db
 mongoose
     .connect(db)
-    .then(() => console.log('MongoDB Connected!'))
+    .then(()=> console.log('MongoDB Connected'))
     .catch(err => console.log(err));
 
-app.get('/', (req, res) => res.send('Hello!!!'));
+//passport middleware
+app.use(passport.initialize());
 
-//Use Routes
-app.use('/api/users', users);
-app.use('/api/profile', profile);
-app.use('/api/posts', posts);
+//passport Config - jwt strategy
+require('./config/passport')(passport);
 
-const port = process.env.PORT || 5000;
+//use routes
+app.use('/api/users',users);
+app.use('/api/profile',profile);
+app.use('/api/posts',posts);
 
-app.listen(port, () => console.log('Server running on port ${port}'));
 
+
+const  port = process.env.PORT || 5000;
+app.listen(port,()=> console.log(`Server running on port ${port}`));
